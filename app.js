@@ -248,8 +248,40 @@ import { portfolioConfig } from './portfolio.config.js';
   // --- Notifications + Contact Form ----------------------------------------
   function contact(){ const form=q('#contact-form'); if(!form) return; const email=/^[^\s@]+@[^\s@]+\.[^\s@]+$/; let note=null; const show=(msg,type='info')=>{ if(!note){ note=document.createElement('div'); document.body.appendChild(note); } note.className=`notification notification--${type}`; note.setAttribute('role','status'); note.setAttribute('aria-live','polite'); note.innerHTML=`<div class="notification-content"><span class="notification-message">${msg}</span><button class="notification-close" type="button" aria-label="Close">×</button></div>`; requestAnimationFrame(()=>note.classList.add('notification--visible')); clearTimeout(show._t); show._t=setTimeout(()=>{ hide(); },4800); }; const hide=()=>{ if(note){ note.classList.remove('notification--visible'); setTimeout(()=>note&&note.remove(),280); note=null; } }; document.addEventListener('click',e=>{ if(e.target.closest('.notification-close')) hide(); }); form.addEventListener('submit',e=>{ e.preventDefault(); const fd=new FormData(form); const data={ name:fd.get('name')?.trim(), email:fd.get('email')?.trim(), subject:fd.get('subject')?.trim(), message:fd.get('message')?.trim() }; if(Object.values(data).some(v=>!v)){ show('Please fill in all fields.','error'); return; } if(!email.test(data.email)){ show('Please enter a valid email address.','error'); return; } const btn=form.querySelector('button[type="submit"]'); const orig=btn.textContent; btn.textContent='Sending...'; btn.disabled=true; btn.style.opacity='0.7'; setTimeout(()=>{ show('Thank you for your message! I\'ll get back to you soon.','success'); form.reset(); btn.textContent=orig; btn.disabled=false; btn.style.opacity='1'; },1400); }); }
 
+  // --- Theme Toggle -----------------------------------------------------------
+  function initTheme() {
+    const toggle = document.getElementById('theme-toggle');
+    if (!toggle) return;
+
+    const getTheme = () => {
+      const saved = localStorage.getItem('theme');
+      if (saved) return saved;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    };
+
+    const setTheme = theme => {
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem('theme', theme);
+      toggle.setAttribute('aria-label', theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+    };
+
+    setTheme(getTheme());
+
+    toggle.addEventListener('click', () => {
+      const nextTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      setTheme(nextTheme);
+    });
+
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+      if (!localStorage.getItem('theme')) {
+        setTheme(e.matches ? 'dark' : 'light');
+      }
+    });
+  }
+
   // --- Init (critical first, extras deferred) --------------------------------
   document.addEventListener('DOMContentLoaded',()=>{
+    initTheme();
     renderPortfolioConfig();
     typewriter();
     navigation();
